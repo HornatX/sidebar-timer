@@ -27,7 +27,11 @@ var DEFAULT_SETTINGS = {
   durationMinutes: 20,
   message: "\u8BE5\u559D\u6C34\u4E86\uFF01",
   showStatusBar: true,
-  floatingPosition: null
+  floatingPosition: null,
+  darkBgColor: "#F5F4F0",
+  // 默认高反差深色模式背景 (对应原本 css 中的颜色)
+  lightBgColor: "#424242"
+  // 默认浅色模式背景
 };
 var TimerPlugin = class extends import_obsidian.Plugin {
   constructor() {
@@ -40,6 +44,7 @@ var TimerPlugin = class extends import_obsidian.Plugin {
   }
   async onload() {
     await this.loadSettings();
+    this.applyCustomStyles();
     this.ribbonIconEl = this.addRibbonIcon("clock", "\u5F00\u542F\u5012\u8BA1\u65F6", (evt) => {
       this.toggleTimer();
     });
@@ -52,12 +57,32 @@ var TimerPlugin = class extends import_obsidian.Plugin {
     if (this.floatingWindow) {
       this.floatingWindow.close();
     }
+    this.removeCustomStyles();
   }
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
   async saveSettings() {
     await this.saveData(this.settings);
+  }
+  // 新增：动态应用 CSS 样式，覆盖默认的主题变量
+  applyCustomStyles() {
+    let styleEl = document.getElementById("timer-custom-styles");
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = "timer-custom-styles";
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = `
+			body.theme-dark { --capsule-bg: ${this.settings.darkBgColor}; }
+			body.theme-light { --capsule-bg: ${this.settings.lightBgColor}; }
+		`;
+  }
+  removeCustomStyles() {
+    const styleEl = document.getElementById("timer-custom-styles");
+    if (styleEl) {
+      styleEl.remove();
+    }
   }
   toggleTimer() {
     if (this.isRunning) {
@@ -126,7 +151,6 @@ var TimerFloatingWindow = class {
     this.isDragging = false;
     this.offsetX = 0;
     this.offsetY = 0;
-    // 终极修复 2：使用 Pointer Event，全面支持鼠标、触摸屏手指、触控笔
     this.onPointerMove = this._onPointerMove.bind(this);
     this.onPointerUp = this._onPointerUp.bind(this);
     this.plugin = plugin;
@@ -251,5 +275,19 @@ var TimerSettingTab = class extends import_obsidian.PluginSettingTab {
       await this.plugin.saveSettings();
       this.plugin.updateStatusBar();
     }));
+    new import_obsidian.Setting(containerEl).setName("\u6DF1\u8272\u6A21\u5F0F\u80CC\u666F\u8272").setDesc("\u8BBE\u7F6E\u6DF1\u8272\u6A21\u5F0F\u4E0B\u80F6\u56CA\u60AC\u6D6E\u7A97\u7684\u80CC\u666F\u989C\u8272\u3002").addColorPicker(
+      (color) => color.setValue(this.plugin.settings.darkBgColor).onChange(async (value) => {
+        this.plugin.settings.darkBgColor = value;
+        await this.plugin.saveSettings();
+        this.plugin.applyCustomStyles();
+      })
+    );
+    new import_obsidian.Setting(containerEl).setName("\u6D45\u8272\u6A21\u5F0F\u80CC\u666F\u8272").setDesc("\u8BBE\u7F6E\u6D45\u8272\u6A21\u5F0F\u4E0B\u80F6\u56CA\u60AC\u6D6E\u7A97\u7684\u80CC\u666F\u989C\u8272\u3002").addColorPicker(
+      (color) => color.setValue(this.plugin.settings.lightBgColor).onChange(async (value) => {
+        this.plugin.settings.lightBgColor = value;
+        await this.plugin.saveSettings();
+        this.plugin.applyCustomStyles();
+      })
+    );
   }
 };
