@@ -1,10 +1,10 @@
 {
-  "id": "heshui-jishiqi",
-  "name": "侧边栏倒计时",
-  "version": "1.0.2",
+  "id": "sidebar-timer",
+  "name": "Sidebar Timer",
+  "version": "1.0.3",
   "minAppVersion": "0.15.0",
   "description": "A minimalist floating capsule timer that supports custom durations, notification messages, and drag position saving.",
   "author": "hornat",
-  "authorUrl": "https://github.com/HornatX",
+  "authorUrl": "",
   "isDesktopOnly": false
 }
