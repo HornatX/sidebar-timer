@@ -8,8 +8,6 @@ interface TimerPluginSettings {
 	message: string;
 	showStatusBar: boolean;
 	floatingPosition: { x: number; y: number } | null;
-	darkBgColor: string;  // 新增：深色模式背景色
-	lightBgColor: string; // 新增：浅色模式背景色
 }
 
 const DEFAULT_SETTINGS: TimerPluginSettings = {
@@ -17,8 +15,6 @@ const DEFAULT_SETTINGS: TimerPluginSettings = {
 	message: '该喝水了！',
 	showStatusBar: true,
 	floatingPosition: null,
-	darkBgColor: '#F5F4F0', // 默认高反差深色模式背景 (对应原本 css 中的颜色)
-	lightBgColor: '#424242', // 默认浅色模式背景
 };
 
 // ------------------------------------------------------------
@@ -39,9 +35,6 @@ export default class TimerPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		// 初始化应用自定义颜色
-		this.applyCustomStyles();
-
 		// 侧边栏图标
 		this.ribbonIconEl = this.addRibbonIcon('clock', '开启倒计时', (evt: MouseEvent) => {
 			this.toggleTimer();
@@ -60,8 +53,6 @@ export default class TimerPlugin extends Plugin {
 		if (this.floatingWindow) {
 			this.floatingWindow.close();
 		}
-		// 插件卸载时移除自定义样式
-		this.removeCustomStyles();
 	}
 
 	async loadSettings() {
@@ -70,29 +61,6 @@ export default class TimerPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-
-	// 新增：动态应用 CSS 样式，覆盖默认的主题变量
-	applyCustomStyles() {
-		let styleEl = document.getElementById('timer-custom-styles');
-		if (!styleEl) {
-			styleEl = document.createElement('style');
-			styleEl.id = 'timer-custom-styles';
-			document.head.appendChild(styleEl);
-		}
-		
-		// 通过增加 body 选择器提高优先级，覆盖 styles.css 中的颜色设置
-		styleEl.textContent = `
-			body.theme-dark { --capsule-bg: ${this.settings.darkBgColor}; }
-			body.theme-light { --capsule-bg: ${this.settings.lightBgColor}; }
-		`;
-	}
-
-	removeCustomStyles() {
-		const styleEl = document.getElementById('timer-custom-styles');
-		if (styleEl) {
-			styleEl.remove();
-		}
 	}
 
 	toggleTimer() {
@@ -106,6 +74,7 @@ export default class TimerPlugin extends Plugin {
 	startTimer() {
 		this.isRunning = true;
 		
+		// 终极修复 1：如果已经有悬浮窗存在，强制关闭它（防止“幽灵悬浮窗”）
 		if (this.floatingWindow) {
 			this.floatingWindow.close();
 			this.floatingWindow = null;
@@ -181,6 +150,7 @@ class TimerFloatingWindow {
 	private offsetX = 0;
 	private offsetY = 0;
 
+	// 终极修复 2：使用 Pointer Event，全面支持鼠标、触摸屏手指、触控笔
 	private onPointerMove = this._onPointerMove.bind(this);
 	private onPointerUp = this._onPointerUp.bind(this);
 
@@ -191,6 +161,7 @@ class TimerFloatingWindow {
 	open() {
 		this.close();
 
+		// 终极修复 3：兼容性极强的文档获取方式 (防止旧版本 Obsidian 报错)
 		// @ts-ignore
 		this.currentDoc = window.activeDocument ?? document;
 		// @ts-ignore
@@ -198,10 +169,12 @@ class TimerFloatingWindow {
 
 		if (!this.currentDoc || !this.currentWin) return;
 
+		// 1. 创建胶囊主容器
 		this.windowEl = this.currentDoc.createElement('div');
 		this.windowEl.addClass('timer-floating-window');
 		this.currentDoc.body.appendChild(this.windowEl);
 
+		// 2. 左侧按钮（开始/重复）
 		const repeatBtn = this.windowEl.createEl('button', { cls: ['timer-btn', 'timer-btn-repeat'] });
 		setIcon(repeatBtn, 'play');
 		repeatBtn.addEventListener('click', () => {
@@ -209,15 +182,18 @@ class TimerFloatingWindow {
 			this.close();
 		});
 
+		// 3. 中间提示文字
 		const message = this.plugin.settings.message || '时间到！';
 		this.windowEl.createDiv({ text: message, cls: 'timer-floating-window-text' });
 
+		// 4. 右侧按钮（关闭）
 		const closeBtn = this.windowEl.createEl('button', { cls: ['timer-btn', 'timer-btn-close'] });
 		setIcon(closeBtn, 'x');
 		closeBtn.addEventListener('click', () => {
 			this.close();
 		});
 
+		// 5. 初始化位置处理
 		setTimeout(() => {
 			if (!this.windowEl || !this.currentWin) return;
 			
@@ -236,6 +212,7 @@ class TimerFloatingWindow {
 			this.windowEl.style.visibility = 'visible'; 
 		}, 0);
 
+		// 6. 注册拖拽监听 (使用 pointerdown 完美兼容所有设备)
 		this.windowEl.addEventListener('pointerdown', (e) => {
 			if ((e.target as Element).closest('.timer-btn')) return;
 
@@ -246,6 +223,7 @@ class TimerFloatingWindow {
 			this.offsetX = e.clientX - rect.left;
 			this.offsetY = e.clientY - rect.top;
 
+			// 强制捕获指针（手指或鼠标哪怕滑出元素外也能保持拖拽不断开）
 			this.windowEl?.setPointerCapture(e.pointerId);
 
 			this.currentDoc?.addEventListener('pointermove', this.onPointerMove);
@@ -364,30 +342,5 @@ class TimerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 					this.plugin.updateStatusBar();
 				}));
-
-		// ==================== 新增：背景颜色设置 ====================
-		new Setting(containerEl)
-			.setName('深色模式背景色')
-			.setDesc('设置深色模式下胶囊悬浮窗的背景颜色。')
-			.addColorPicker(color => color
-				.setValue(this.plugin.settings.darkBgColor)
-				.onChange(async (value) => {
-					this.plugin.settings.darkBgColor = value;
-					await this.plugin.saveSettings();
-					this.plugin.applyCustomStyles(); // 颜色变化后实时应用
-				})
-			);
-
-		new Setting(containerEl)
-			.setName('浅色模式背景色')
-			.setDesc('设置浅色模式下胶囊悬浮窗的背景颜色。')
-			.addColorPicker(color => color
-				.setValue(this.plugin.settings.lightBgColor)
-				.onChange(async (value) => {
-					this.plugin.settings.lightBgColor = value;
-					await this.plugin.saveSettings();
-					this.plugin.applyCustomStyles(); // 颜色变化后实时应用
-				})
-			);
 	}
 }
