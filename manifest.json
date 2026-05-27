@@ -3,7 +3,7 @@
   "name": "侧边栏倒计时",
   "version": "1.0.0",
   "minAppVersion": "0.15.0",
-  "description": "一个实用的倒计时提醒插件。点击侧边栏图标快速开启，支持自定义时长与提示语，时间到达后弹窗提醒，并可在状态栏实时查看剩余时间。",
+  "description": "A minimalist floating capsule timer that supports custom durations, notification messages, and drag position saving.",
   "author": "hornat",
   "authorUrl": "",
   "isDesktopOnly": false
