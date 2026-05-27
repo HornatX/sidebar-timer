@@ -6,5 +6,5 @@
   "description": "A minimalist floating capsule timer that supports custom durations, notification messages, and drag position saving.",
   "author": "hornat",
   "authorUrl": "",
-  "isDesktopOnly": false
+  "isDesktopOnly": true
 }
