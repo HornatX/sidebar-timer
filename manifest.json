@@ -1,6 +1,6 @@
 {
   "id": "sidebar-timer",
-  "name": "Sidebar Timer",
+  "name": "喝水倒计时",
   "version": "1.0.5",
   "minAppVersion": "0.15.0",
   "description": "A minimalist floating capsule timer that supports custom durations, notification messages, and drag position saving.",
