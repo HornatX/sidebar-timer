@@ -1,4 +1,4 @@
-# Capsule Timer (极简悬浮胶囊倒计时)
+# Capsule Timer (倒计时)
 
 > **💡 温馨提示 / Notice:**  
 > 本插件专注于极简美学设计与高精准度的时间管理。建议在日常工作流中作为辅助工具使用，支持 Obsidian 的多窗口（Popout）环境。
