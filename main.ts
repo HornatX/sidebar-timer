@@ -8,8 +8,14 @@ interface TimerPluginSettings {
 	message: string;
 	showStatusBar: boolean;
 	floatingPosition: { x: number; y: number } | null;
-	darkBgColor: string;  // 新增：深色模式背景色
-	lightBgColor: string; // 新增：浅色模式背景色
+	darkBgColor: string;
+	lightBgColor: string;
+	
+	// --- 新增：倒计时状态保存（支持重启恢复） ---
+	isRunning: boolean;
+	savedTargetTime: number | null; 
+	savedTimeLeft: number | null;
+	countMode: 'real' | 'app'; // real: 真实时间流逝, app: 仅软件运行时流逝
 }
 
 const DEFAULT_SETTINGS: TimerPluginSettings = {
@@ -17,8 +23,12 @@ const DEFAULT_SETTINGS: TimerPluginSettings = {
 	message: '该喝水了！',
 	showStatusBar: true,
 	floatingPosition: null,
-	darkBgColor: '#F5F4F0', // 默认高反差深色模式背景 (对应原本 css 中的颜色)
-	lightBgColor: '#424242', // 默认浅色模式背景
+	darkBgColor: '#F5F4F0',
+	lightBgColor: '#424242',
+	isRunning: false,
+	savedTargetTime: null,
+	savedTimeLeft: null,
+	countMode: 'real', // 默认按真实时间
 };
 
 // ------------------------------------------------------------
@@ -33,6 +43,10 @@ export default class TimerPlugin extends Plugin {
 	targetTime: number = 0; 
 	timeLeft: number = 0;
 	isRunning: boolean = false;
+
+	// 用于应对“仅运行时模式”下电脑休眠带来的时间跳跃
+	lastTickTime: number = 0;
+	lastSaveTime: number = 0;
 
 	floatingWindow: TimerFloatingWindow | null = null;
 
@@ -53,14 +67,25 @@ export default class TimerPlugin extends Plugin {
 
 		// 设置面板
 		this.addSettingTab(new TimerSettingTab(this.app, this));
+
+		// 初始化时恢复重启前的倒计时状态
+		this.resumeTimerIfRunning();
 	}
 
-	onunload() {
-		this.stopTimer(); 
+	async onunload() {
+		// 卸载或关闭软件前，进行最后一次状态保存
+		if (this.isRunning) {
+			this.settings.savedTimeLeft = this.timeLeft;
+			this.settings.savedTargetTime = this.targetTime;
+			await this.saveData(this.settings);
+		}
+
+		if (this.timerInterval) {
+			window.clearInterval(this.timerInterval);
+		}
 		if (this.floatingWindow) {
 			this.floatingWindow.close();
 		}
-		// 插件卸载时移除自定义样式
 		this.removeCustomStyles();
 	}
 
@@ -72,7 +97,6 @@ export default class TimerPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	// 新增：动态应用 CSS 样式，覆盖默认的主题变量
 	applyCustomStyles() {
 		let styleEl = document.getElementById('timer-custom-styles');
 		if (!styleEl) {
@@ -80,8 +104,6 @@ export default class TimerPlugin extends Plugin {
 			styleEl.id = 'timer-custom-styles';
 			document.head.appendChild(styleEl);
 		}
-		
-		// 通过增加 body 选择器提高优先级，覆盖 styles.css 中的颜色设置
 		styleEl.textContent = `
 			body.theme-dark { --capsule-bg: ${this.settings.darkBgColor}; }
 			body.theme-light { --capsule-bg: ${this.settings.lightBgColor}; }
@@ -95,6 +117,39 @@ export default class TimerPlugin extends Plugin {
 		}
 	}
 
+	// 核心：重启后恢复倒计时逻辑
+	resumeTimerIfRunning() {
+		if (!this.settings.isRunning) return;
+
+		const now = Date.now();
+
+		if (this.settings.countMode === 'real') {
+			// 按真实时间流逝
+			if (this.settings.savedTargetTime) {
+				if (now >= this.settings.savedTargetTime) {
+					// 期间已经超时了，立刻提醒
+					this.triggerAlarm();
+					this.stopTimer();
+				} else {
+					// 还没到时间，恢复并继续
+					this.targetTime = this.settings.savedTargetTime;
+					this.timeLeft = Math.round((this.targetTime - now) / 1000);
+					this._startInterval();
+				}
+			}
+		} else if (this.settings.countMode === 'app') {
+			// 仅软件运行时流逝（关闭期间时间暂停）
+			if (this.settings.savedTimeLeft && this.settings.savedTimeLeft > 0) {
+				this.timeLeft = this.settings.savedTimeLeft;
+				this.targetTime = now + this.timeLeft * 1000;
+				this._startInterval();
+			} else {
+				this.triggerAlarm();
+				this.stopTimer();
+			}
+		}
+	}
+
 	toggleTimer() {
 		if (this.isRunning) {
 			this.stopTimer();
@@ -103,9 +158,7 @@ export default class TimerPlugin extends Plugin {
 		}
 	}
 
-	startTimer() {
-		this.isRunning = true;
-		
+	async startTimer() {
 		if (this.floatingWindow) {
 			this.floatingWindow.close();
 			this.floatingWindow = null;
@@ -114,6 +167,20 @@ export default class TimerPlugin extends Plugin {
 		const durationMs = this.settings.durationMinutes * 60 * 1000;
 		this.targetTime = Date.now() + durationMs;
 		this.timeLeft = Math.round(durationMs / 1000);
+
+		// 保存运行状态
+		this.settings.isRunning = true;
+		this.settings.savedTargetTime = this.targetTime;
+		this.settings.savedTimeLeft = this.timeLeft;
+		await this.saveSettings();
+
+		this._startInterval();
+	}
+
+	_startInterval() {
+		this.isRunning = true;
+		this.lastTickTime = Date.now();
+		this.lastSaveTime = Date.now();
 
 		setIcon(this.ribbonIconEl, 'stop-circle');
 		this.ribbonIconEl.setAttribute('aria-label', '停止倒计时');
@@ -126,8 +193,15 @@ export default class TimerPlugin extends Plugin {
 		this.updateStatusBar();
 	}
 
-	stopTimer() {
+	async stopTimer() {
 		this.isRunning = false;
+
+		// 清理运行状态
+		this.settings.isRunning = false;
+		this.settings.savedTargetTime = null;
+		this.settings.savedTimeLeft = null;
+		this.saveData(this.settings).catch(e => console.error(e));
+
 		if (this.timerInterval) {
 			window.clearInterval(this.timerInterval);
 			this.timerInterval = null;
@@ -140,17 +214,38 @@ export default class TimerPlugin extends Plugin {
 
 	tick() {
 		const now = Date.now();
+		const delta = now - this.lastTickTime;
+		this.lastTickTime = now;
+
+		// 如果是“仅软件开启时运行”模式，且检测到时间跳跃（超过 2 秒，可能是休眠或切换后台）
+		if (this.settings.countMode === 'app' && delta > 2000) {
+			// 将多出来的时间差补回到 targetTime，巧妙实现时间暂停效果
+			this.targetTime += (delta - 1000);
+		}
+
 		this.timeLeft = Math.max(0, Math.round((this.targetTime - now) / 1000));
-		
 		this.updateStatusBar();
 
 		if (this.timeLeft <= 0) {
+			this.triggerAlarm();
 			this.stopTimer();
-			if (!this.floatingWindow) {
-				this.floatingWindow = new TimerFloatingWindow(this);
-			}
-			this.floatingWindow.open();
+			return;
 		}
+
+		// 定期自动保存状态(每 10 秒)，防止软件意外崩溃导致数据丢失
+		if (now - this.lastSaveTime >= 10000) {
+			this.settings.savedTimeLeft = this.timeLeft;
+			this.settings.savedTargetTime = this.targetTime;
+			this.saveData(this.settings).catch(e => console.error(e));
+			this.lastSaveTime = now;
+		}
+	}
+
+	triggerAlarm() {
+		if (!this.floatingWindow) {
+			this.floatingWindow = new TimerFloatingWindow(this);
+		}
+		this.floatingWindow.open();
 	}
 
 	updateStatusBar() {
@@ -353,6 +448,20 @@ class TimerSettingTab extends PluginSettingTab {
 					this.plugin.settings.message = value;
 					await this.plugin.saveSettings();
 				}));
+        
+        // ==================== 新增：倒计时模式设置 ====================
+		new Setting(containerEl)
+			.setName('倒计时模式')
+			.setDesc('【真实时间】：软件关闭或电脑休眠时时间继续流逝；【仅软件运行】：关闭或休眠时倒数暂停（适合防用眼过度）。')
+			.addDropdown(drop => drop
+				.addOption('real', '按真实时间流逝 (喝水/番茄钟)')
+				.addOption('app', '仅软件运行时倒数 (防疲劳沉浸)')
+				.setValue(this.plugin.settings.countMode)
+				.onChange(async (value: 'real' | 'app') => {
+					this.plugin.settings.countMode = value;
+					await this.plugin.saveSettings();
+				})
+			);
 
 		new Setting(containerEl)
 			.setName('显示状态栏倒计时')
@@ -365,7 +474,6 @@ class TimerSettingTab extends PluginSettingTab {
 					this.plugin.updateStatusBar();
 				}));
 
-		// ==================== 新增：背景颜色设置 ====================
 		new Setting(containerEl)
 			.setName('深色模式背景色')
 			.setDesc('设置深色模式下胶囊悬浮窗的背景颜色。')
@@ -374,7 +482,7 @@ class TimerSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.darkBgColor = value;
 					await this.plugin.saveSettings();
-					this.plugin.applyCustomStyles(); // 颜色变化后实时应用
+					this.plugin.applyCustomStyles();
 				})
 			);
 
@@ -386,7 +494,7 @@ class TimerSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.lightBgColor = value;
 					await this.plugin.saveSettings();
-					this.plugin.applyCustomStyles(); // 颜色变化后实时应用
+					this.plugin.applyCustomStyles();
 				})
 			);
 	}

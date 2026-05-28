@@ -29,9 +29,12 @@ var DEFAULT_SETTINGS = {
   showStatusBar: true,
   floatingPosition: null,
   darkBgColor: "#F5F4F0",
-  // 默认高反差深色模式背景 (对应原本 css 中的颜色)
-  lightBgColor: "#424242"
-  // 默认浅色模式背景
+  lightBgColor: "#424242",
+  isRunning: false,
+  savedTargetTime: null,
+  savedTimeLeft: null,
+  countMode: "real"
+  // 默认按真实时间
 };
 var TimerPlugin = class extends import_obsidian.Plugin {
   constructor() {
@@ -40,6 +43,9 @@ var TimerPlugin = class extends import_obsidian.Plugin {
     this.targetTime = 0;
     this.timeLeft = 0;
     this.isRunning = false;
+    // 用于应对“仅运行时模式”下电脑休眠带来的时间跳跃
+    this.lastTickTime = 0;
+    this.lastSaveTime = 0;
     this.floatingWindow = null;
   }
   async onload() {
@@ -51,9 +57,17 @@ var TimerPlugin = class extends import_obsidian.Plugin {
     this.statusBarItemEl = this.addStatusBarItem();
     this.updateStatusBar();
     this.addSettingTab(new TimerSettingTab(this.app, this));
+    this.resumeTimerIfRunning();
   }
-  onunload() {
-    this.stopTimer();
+  async onunload() {
+    if (this.isRunning) {
+      this.settings.savedTimeLeft = this.timeLeft;
+      this.settings.savedTargetTime = this.targetTime;
+      await this.saveData(this.settings);
+    }
+    if (this.timerInterval) {
+      window.clearInterval(this.timerInterval);
+    }
     if (this.floatingWindow) {
       this.floatingWindow.close();
     }
@@ -65,7 +79,6 @@ var TimerPlugin = class extends import_obsidian.Plugin {
   async saveSettings() {
     await this.saveData(this.settings);
   }
-  // 新增：动态应用 CSS 样式，覆盖默认的主题变量
   applyCustomStyles() {
     let styleEl = document.getElementById("timer-custom-styles");
     if (!styleEl) {
@@ -84,6 +97,32 @@ var TimerPlugin = class extends import_obsidian.Plugin {
       styleEl.remove();
     }
   }
+  // 核心：重启后恢复倒计时逻辑
+  resumeTimerIfRunning() {
+    if (!this.settings.isRunning) return;
+    const now = Date.now();
+    if (this.settings.countMode === "real") {
+      if (this.settings.savedTargetTime) {
+        if (now >= this.settings.savedTargetTime) {
+          this.triggerAlarm();
+          this.stopTimer();
+        } else {
+          this.targetTime = this.settings.savedTargetTime;
+          this.timeLeft = Math.round((this.targetTime - now) / 1e3);
+          this._startInterval();
+        }
+      }
+    } else if (this.settings.countMode === "app") {
+      if (this.settings.savedTimeLeft && this.settings.savedTimeLeft > 0) {
+        this.timeLeft = this.settings.savedTimeLeft;
+        this.targetTime = now + this.timeLeft * 1e3;
+        this._startInterval();
+      } else {
+        this.triggerAlarm();
+        this.stopTimer();
+      }
+    }
+  }
   toggleTimer() {
     if (this.isRunning) {
       this.stopTimer();
@@ -91,8 +130,7 @@ var TimerPlugin = class extends import_obsidian.Plugin {
       this.startTimer();
     }
   }
-  startTimer() {
-    this.isRunning = true;
+  async startTimer() {
     if (this.floatingWindow) {
       this.floatingWindow.close();
       this.floatingWindow = null;
@@ -100,6 +138,16 @@ var TimerPlugin = class extends import_obsidian.Plugin {
     const durationMs = this.settings.durationMinutes * 60 * 1e3;
     this.targetTime = Date.now() + durationMs;
     this.timeLeft = Math.round(durationMs / 1e3);
+    this.settings.isRunning = true;
+    this.settings.savedTargetTime = this.targetTime;
+    this.settings.savedTimeLeft = this.timeLeft;
+    await this.saveSettings();
+    this._startInterval();
+  }
+  _startInterval() {
+    this.isRunning = true;
+    this.lastTickTime = Date.now();
+    this.lastSaveTime = Date.now();
     (0, import_obsidian.setIcon)(this.ribbonIconEl, "stop-circle");
     this.ribbonIconEl.setAttribute("aria-label", "\u505C\u6B62\u5012\u8BA1\u65F6");
     if (this.timerInterval) {
@@ -108,8 +156,12 @@ var TimerPlugin = class extends import_obsidian.Plugin {
     this.timerInterval = window.setInterval(() => this.tick(), 1e3);
     this.updateStatusBar();
   }
-  stopTimer() {
+  async stopTimer() {
     this.isRunning = false;
+    this.settings.isRunning = false;
+    this.settings.savedTargetTime = null;
+    this.settings.savedTimeLeft = null;
+    this.saveData(this.settings).catch((e) => console.error(e));
     if (this.timerInterval) {
       window.clearInterval(this.timerInterval);
       this.timerInterval = null;
@@ -120,15 +172,30 @@ var TimerPlugin = class extends import_obsidian.Plugin {
   }
   tick() {
     const now = Date.now();
+    const delta = now - this.lastTickTime;
+    this.lastTickTime = now;
+    if (this.settings.countMode === "app" && delta > 2e3) {
+      this.targetTime += delta - 1e3;
+    }
     this.timeLeft = Math.max(0, Math.round((this.targetTime - now) / 1e3));
     this.updateStatusBar();
     if (this.timeLeft <= 0) {
+      this.triggerAlarm();
       this.stopTimer();
-      if (!this.floatingWindow) {
-        this.floatingWindow = new TimerFloatingWindow(this);
-      }
-      this.floatingWindow.open();
+      return;
     }
+    if (now - this.lastSaveTime >= 1e4) {
+      this.settings.savedTimeLeft = this.timeLeft;
+      this.settings.savedTargetTime = this.targetTime;
+      this.saveData(this.settings).catch((e) => console.error(e));
+      this.lastSaveTime = now;
+    }
+  }
+  triggerAlarm() {
+    if (!this.floatingWindow) {
+      this.floatingWindow = new TimerFloatingWindow(this);
+    }
+    this.floatingWindow.open();
   }
   updateStatusBar() {
     if (!this.settings.showStatusBar || !this.isRunning) {
@@ -270,6 +337,12 @@ var TimerSettingTab = class extends import_obsidian.PluginSettingTab {
       this.plugin.settings.message = value;
       await this.plugin.saveSettings();
     }));
+    new import_obsidian.Setting(containerEl).setName("\u5012\u8BA1\u65F6\u6A21\u5F0F").setDesc("\u3010\u771F\u5B9E\u65F6\u95F4\u3011\uFF1A\u8F6F\u4EF6\u5173\u95ED\u6216\u7535\u8111\u4F11\u7720\u65F6\u65F6\u95F4\u7EE7\u7EED\u6D41\u901D\uFF1B\u3010\u4EC5\u8F6F\u4EF6\u8FD0\u884C\u3011\uFF1A\u5173\u95ED\u6216\u4F11\u7720\u65F6\u5012\u6570\u6682\u505C\uFF08\u9002\u5408\u9632\u7528\u773C\u8FC7\u5EA6\uFF09\u3002").addDropdown(
+      (drop) => drop.addOption("real", "\u6309\u771F\u5B9E\u65F6\u95F4\u6D41\u901D (\u559D\u6C34/\u756A\u8304\u949F)").addOption("app", "\u4EC5\u8F6F\u4EF6\u8FD0\u884C\u65F6\u5012\u6570 (\u9632\u75B2\u52B3\u6C89\u6D78)").setValue(this.plugin.settings.countMode).onChange(async (value) => {
+        this.plugin.settings.countMode = value;
+        await this.plugin.saveSettings();
+      })
+    );
     new import_obsidian.Setting(containerEl).setName("\u663E\u793A\u72B6\u6001\u680F\u5012\u8BA1\u65F6").setDesc("\u5F00\u542F\u540E\uFF0C\u4F1A\u5728\u8F6F\u4EF6\u5E95\u90E8\u72B6\u6001\u680F\u5B9E\u65F6\u663E\u793A\u5269\u4F59\u7684\u5012\u8BA1\u65F6\u65F6\u95F4\u3002").addToggle((toggle) => toggle.setValue(this.plugin.settings.showStatusBar).onChange(async (value) => {
       this.plugin.settings.showStatusBar = value;
       await this.plugin.saveSettings();
