@@ -16,6 +16,9 @@ interface TimerPluginSettings {
 	savedTargetTime: number | null; 
 	savedTimeLeft: number | null;
 	countMode: 'real' | 'app'; // real: 真实时间流逝, app: 仅软件运行时流逝
+
+	// --- 新增：开启软件时自动启动 ---
+	autoStartOnLaunch: boolean;
 }
 
 const DEFAULT_SETTINGS: TimerPluginSettings = {
@@ -28,7 +31,8 @@ const DEFAULT_SETTINGS: TimerPluginSettings = {
 	isRunning: false,
 	savedTargetTime: null,
 	savedTimeLeft: null,
-	countMode: 'real', // 默认按真实时间
+	countMode: 'real', 
+	autoStartOnLaunch: false, // 默认关闭自启
 };
 
 // ------------------------------------------------------------
@@ -68,8 +72,17 @@ export default class TimerPlugin extends Plugin {
 		// 设置面板
 		this.addSettingTab(new TimerSettingTab(this.app, this));
 
+		// 记录加载前的运行状态，避免覆盖"已过期该提醒"的任务
+		const hadPendingTask = this.settings.isRunning;
+
 		// 初始化时恢复重启前的倒计时状态
 		this.resumeTimerIfRunning();
+
+		// ==================== 新增：处理开机自启 ====================
+		// 如果用户开启了自启，并且之前没有未完成/未提醒的任务，则启动全新的倒计时
+		if (this.settings.autoStartOnLaunch && !hadPendingTask) {
+			this.startTimer();
+		}
 	}
 
 	async onunload() {
@@ -448,8 +461,19 @@ class TimerSettingTab extends PluginSettingTab {
 					this.plugin.settings.message = value;
 					await this.plugin.saveSettings();
 				}));
+
+		// ==================== 新增：开启软件自启设置 ====================
+		new Setting(containerEl)
+			.setName('开启软件时自动启动')
+			.setDesc('开启后，每次打开 Obsidian 时，如果没有未完成或未提醒的倒计时任务，则会自动开始新的一轮倒计时。')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.autoStartOnLaunch)
+				.onChange(async (value) => {
+					this.plugin.settings.autoStartOnLaunch = value;
+					await this.plugin.saveSettings();
+				})
+			);
         
-        // ==================== 新增：倒计时模式设置 ====================
 		new Setting(containerEl)
 			.setName('倒计时模式')
 			.setDesc('【真实时间】：软件关闭或电脑休眠时时间继续流逝；【仅软件运行】：关闭或休眠时倒数暂停（适合防用眼过度）。')

@@ -1,7 +1,7 @@
 {
   "id": "sidebar-timer",
   "name": "Sidebar Timer",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "minAppVersion": "0.15.0",
   "description": "A minimalist floating capsule timer that supports custom durations, notification messages, and drag position saving.",
   "author": "hornat",

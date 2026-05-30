@@ -33,8 +33,9 @@ var DEFAULT_SETTINGS = {
   isRunning: false,
   savedTargetTime: null,
   savedTimeLeft: null,
-  countMode: "real"
-  // 默认按真实时间
+  countMode: "real",
+  autoStartOnLaunch: false
+  // 默认关闭自启
 };
 var TimerPlugin = class extends import_obsidian.Plugin {
   constructor() {
@@ -57,7 +58,11 @@ var TimerPlugin = class extends import_obsidian.Plugin {
     this.statusBarItemEl = this.addStatusBarItem();
     this.updateStatusBar();
     this.addSettingTab(new TimerSettingTab(this.app, this));
+    const hadPendingTask = this.settings.isRunning;
     this.resumeTimerIfRunning();
+    if (this.settings.autoStartOnLaunch && !hadPendingTask) {
+      this.startTimer();
+    }
   }
   async onunload() {
     if (this.isRunning) {
@@ -337,6 +342,12 @@ var TimerSettingTab = class extends import_obsidian.PluginSettingTab {
       this.plugin.settings.message = value;
       await this.plugin.saveSettings();
     }));
+    new import_obsidian.Setting(containerEl).setName("\u5F00\u542F\u8F6F\u4EF6\u65F6\u81EA\u52A8\u542F\u52A8").setDesc("\u5F00\u542F\u540E\uFF0C\u6BCF\u6B21\u6253\u5F00 Obsidian \u65F6\uFF0C\u5982\u679C\u6CA1\u6709\u672A\u5B8C\u6210\u6216\u672A\u63D0\u9192\u7684\u5012\u8BA1\u65F6\u4EFB\u52A1\uFF0C\u5219\u4F1A\u81EA\u52A8\u5F00\u59CB\u65B0\u7684\u4E00\u8F6E\u5012\u8BA1\u65F6\u3002").addToggle(
+      (toggle) => toggle.setValue(this.plugin.settings.autoStartOnLaunch).onChange(async (value) => {
+        this.plugin.settings.autoStartOnLaunch = value;
+        await this.plugin.saveSettings();
+      })
+    );
     new import_obsidian.Setting(containerEl).setName("\u5012\u8BA1\u65F6\u6A21\u5F0F").setDesc("\u3010\u771F\u5B9E\u65F6\u95F4\u3011\uFF1A\u8F6F\u4EF6\u5173\u95ED\u6216\u7535\u8111\u4F11\u7720\u65F6\u65F6\u95F4\u7EE7\u7EED\u6D41\u901D\uFF1B\u3010\u4EC5\u8F6F\u4EF6\u8FD0\u884C\u3011\uFF1A\u5173\u95ED\u6216\u4F11\u7720\u65F6\u5012\u6570\u6682\u505C\uFF08\u9002\u5408\u9632\u7528\u773C\u8FC7\u5EA6\uFF09\u3002").addDropdown(
       (drop) => drop.addOption("real", "\u6309\u771F\u5B9E\u65F6\u95F4\u6D41\u901D (\u559D\u6C34/\u756A\u8304\u949F)").addOption("app", "\u4EC5\u8F6F\u4EF6\u8FD0\u884C\u65F6\u5012\u6570 (\u9632\u75B2\u52B3\u6C89\u6D78)").setValue(this.plugin.settings.countMode).onChange(async (value) => {
         this.plugin.settings.countMode = value;
