@@ -1,186 +1,171 @@
-# Sidebar Timer (倒计时)
+# ✦ 极简悬浮胶囊倒计时 ✦
 
-如果您觉得这款插件对您有帮助，欢迎在小红书（RED）上关注我，我会在那里分享更多技巧、教程和更新。
+<a href="https://www.xiaohongshu.com/user/profile/6353523d000000001802f8ae?xsec_token=YB4vLkLfzOijtg8c1Vh12ZASaI1ByqPPYi82ZzKbG72qE=&xsec_source=app_share&xhsshare=QQ&appuid=6353523d000000001802f8ae&apptime=1780631605&share_id=3846902afcd94e2ab78467cd7b9b5669" target="_blank"><img src="https://img.shields.io/badge/✦_关注小红书-ff2442?style=for-the-badge&logo=xiaohongshu&logoColor=white" alt="关注小红书" height="40" style="border-radius: 8px; box-shadow: 0 2px 4px rgba(33, 31, 32, 0.84);"></a>
 
-If you find this plugin helpful, feel free to follow me on Xiaohongshu (RED) where I share more tips, tutorials, and updates.
+我在小红书发布了许多 Obsidian 的教程和插件开发进度，你的关注就是对我最大的支持
 
-https://www.xiaohongshu.com/user/profile/6353523d000000001802f8ae?xsec_token=YB4vLkLfzOijtg8c1Vh12ZASaI1ByqPPYi82ZzKbG72qE=&xsec_source=app_share&xhsshare=QQ&appuid=6353523d000000001802f8ae&apptime=1780631605&share_id=3846902afcd94e2ab78467cd7b9b5669
+高颜值悬浮胶囊倒计时，喝水提醒、番茄钟、防疲劳，一拖即用。
+<p align="center">
+  <img src="assets/image.png" alt="演示" />
+</p>
 
-> **💡 温馨提示 / Notice:**  
-> 本插件专注于极简美学设计与高精准度的时间管理。建议在日常工作流中作为辅助工具使用，支持 Obsidian 的多窗口（Popout）环境。
-> QQ交流群: 1094620986  
+[简体中文](#简体中文) | [用法](#用法) | [English](#english) | [Usage](#usage)
 
 ---
 
-## 🇨🇳 简体中文
+## 简体中文
 
-**Capsule Timer（极简悬浮胶囊倒计时）** 是一款为 Obsidian 用户量身定制的高颜值、无干扰悬浮倒计时插件。它在保持极简视觉美感的同时，提供了高精准度的计时逻辑，帮助您在专注写作或工作时轻松掌控节奏。
+**Capsule Timer（极简悬浮胶囊倒计时）** 是一款为 Obsidian 用户量身定制的高颜值、无干扰悬浮倒计时插件。极简美学设计，高精准度计时，帮助您在专注写作或工作时轻松掌控节奏。
 
-### 🌟 核心功能
+### 核心功能
 
-#### 1. 极简高级感胶囊悬浮窗（自适应高反差设计）
+#### 1. 极简毛玻璃胶囊悬浮窗
+半透明毛玻璃质感，自适应深色/浅色主题。深色模式呈"奶咖胶囊"，浅色模式呈"暗灰胶囊"。按钮悬停变色、点击微弹，融入极简桌面美学。
 
-- **毛玻璃与高颜值配色**：悬浮窗采用半透明毛玻璃质感（Backdrop Filter）。支持自适应 Obsidian 主题——深色模式下呈现温润的“奶咖胶囊”，浅色模式下呈现深邃的“暗色深灰胶囊”。
-    
-- **精细微交互**：按钮在悬浮时展现优雅的变色反馈，点击时带有微弹缩动画，完美融入极简桌面美学。
-    
+#### 2. 智能休眠校准（防漂移）
+锁定真实目标截止时间戳，无惧系统休眠。合上笔记本重新唤醒后自动校验真实时间差，超时立刻提醒，彻底解决休眠后计时卡死问题。
 
-#### 2. 智能休眠校准（高精准防漂移）
+#### 3. 位置记忆与边缘防丢失
+拖拽到任意位置，松手即自动记忆坐标。严格的坐标约束算法确保悬浮窗永远不会被拖出屏幕外，窗口大小变化后自动调整。
 
-- **真实时间戳校验**：不再单纯依赖不精确的秒数累减。插件在开始计时后会锁定“目标截止时间”。
-    
-- **无惧系统休眠**：即使中途合上笔记本电脑或系统进入休眠状态，重新唤醒后倒计时也会自动校验真实时间差。如果已超时，会立刻弹出提示，彻底解决了传统网页或插件在休眠后计时卡死的通病。
-    
+#### 4. 双计时模式自由切换
+- **真实时间模式**：适合喝水提醒、番茄钟，关闭软件时间继续走
+- **仅软件运行模式**：适合防用眼疲劳，关闭或休眠时时间暂停
 
-#### 3. 位置记忆与边缘越界防丢失机制
+#### 5. 纯净设计零残留
+完全离线运行，生命周期主动释放，定时器手动销毁，不占用额外内存。
 
-- **位置自动记忆**：您可以自由拖拽悬浮窗到屏幕任意位置。松开手后，插件会自动记录该坐标，下次倒计时结束时，悬浮窗会在相同的位置温和地呈现在您眼前。
-    
-- **边缘拦截（Clamping）**：采用严格的坐标约束算法，悬浮窗在拖动时绝不会被拖出屏幕外。即使调整了 Obsidian 的主窗口大小，悬浮窗也会在下次打开时自动调整，确保永远处于可见范围内。
-    
-- **完美多窗口（Popout）兼容**：全面支持 Obsidian 的多窗口标签页。无论您在主窗口还是分出来的副窗口触发倒计时，悬浮窗都会准确在当前的活动窗口挂载和渲染，不产生定位错乱。
-    
+***
 
-#### 4. 全平台指点交互支持（Pointer Events）
+## 用法
 
-- **支持触控与手写笔**：底层完全抛弃了局限的鼠标事件（Mouse Events），升级为通用的指针事件（Pointer Events）。无论是在电脑上使用鼠标，在 iPad 等平板上使用手指触摸，还是使用电磁笔，都能获得丝滑、稳定的拖拽交互体验。
-    
+1. 前往 **设置** > **Capsule Timer**，设置倒计时时长和到期提示语。
+2. 点击左侧 **钟表** 图标启动倒计时，底部状态栏实时显示进度。
+3. 时间归零后，胶囊悬浮窗弹出：
+   - 点击 **播放** 按钮快速重启一轮
+   - 点击 **X** 按钮关闭提醒
+4. 拖拽悬浮窗文字区域可调整位置，松手即保存。
 
-#### 5. 纯净设计与内存安全（零后台残留）
+***
 
-- **生命周期主动释放**：插件在关闭时会主动释放所有的全局监听器并完全卸载相关的 DOM 节点。
-    
-- **定时器主动销毁**：采用手动生命周期控制，在卸载插件、停用或重新开始时均会彻底消灭并清空多余的后台定时器，不占用额外内存。
-    
+### 设置项一览
 
-### ⚙️ 数据存储机制
+| 设置项 | 说明 |
+|--------|------|
+| 倒计时时间 | 设置时长（分钟） |
+| 提示内容 | 倒计时结束时显示的文字 |
+| 开启软件时自动启动 | 打开 Obsidian 自动开始倒计时 |
+| 倒计时模式 | 真实时间 / 仅软件运行 |
+| 显示状态栏倒计时 | 底部状态栏实时显示剩余时间 |
+| 深色/浅色模式背景色 | 自定义胶囊悬浮窗背景色 |
 
-倒计时时间、自定义提示文本以及保存的悬浮窗坐标等所有配置数据，均保存在 Obsidian 插件默认的本地 data.json 配置文件中。**无网络连接，完全离线运行**，支持任意多端同步方案。
+***
 
-### 📥 安装方法
+### 赞赏支持
+
+<details>
+<summary>🎁 如果觉得有用，请作者喝杯咖啡</summary>
+
+<br>
+
+<p align="center">
+  <img src="assets/赞赏码.JPG" width="250" />
+</p>
+
+</details>
+
+***
+
+### 安装方法
 
 #### 方法一：社区插件安装（推荐）
 
-本插件通过官方审核上架后，您可以通过以下方式安装：
-
-1. 打开 Obsidian **设置** > **社区插件** > **浏览**。
-    
-2. 搜索 **Capsule Timer**。
-    
-3. 点击 **安装**，随后选择 **启用**。
-    
+待插件通过审核并上架社区市场后：
+1. 打开 Obsidian **设置** > **社区插件** > **浏览**。
+2. 搜索并选择 `Capsule Timer`。
+3. 点击 **安装** 并选择 **启用**。
 
 #### 方法二：手动安装
 
-1. 前往本仓库的 Releases 页面，下载最新的 main.js、manifest.json 和 styles.css 文件。
-    
+1. 前往 [Releases](https://github.com/hornatx/capsule-timer/releases) 页面下载最新的 `main.js`、`manifest.json` 和 `styles.css` 文件。
 2. 打开您的 Obsidian 库所在的本地文件夹。
-    
-3. 进入 .obsidian/plugins/ 目录，创建一个名为 capsule-timer（或您自定义的英文名）的新文件夹。
-    
-4. 将下载的三个文件放入该文件夹。
-    
-5. 在 Obsidian **设置** > **社区插件** 中刷新并启用该插件。
-    
+3. 进入 `.obsidian/plugins/` 目录，并创建一个名为 `capsule-timer` 的文件夹。
+4. 将下载的三个文件放入该文件夹中。
+5. 在 Obsidian **设置** > **社区插件** 中重新加载并开启该插件。
 
-### 🛠️ 使用指南
+***
 
-1. **配置时间**：前往 Obsidian **设置** > **Capsule Timer**，设置您的倒计时时长（分钟）和到期提示语（例如：“该喝水了！”）。
-    
-2. **开启计时**：点击 Obsidian 左侧功能栏的 **钟表（Clock）** 图标，启动倒计时。此时底部的状态栏会实时显示倒计时进度。
-    
-3. **结束响应**：当时间归零时，界面将弹美观的胶囊悬浮窗：
-    
-    - 点击左侧的 **播放** 按钮可以快速重新开始一轮倒计时。
-        
-    - 点击右侧的 **X** 按钮或点击侧边栏图标即可将其关闭。
-        
-4. **位置拖拽**：鼠标点击或手指长按悬浮窗的中间文字区域，即可拖拽调整位置，松手即自动保存该坐标。
-    
+QQ 交流群：1094620986
 
 ---
 
-## 🇬🇧 English
+## English
 
-**Capsule Timer** is a beautifully designed, distraction-free floating countdown timer plugin tailored for Obsidian users. Combining elegant minimalist aesthetics with solid, drift-free timing logic, it helps you manage your writing sprints, Pomodoro sessions, or hydration breaks effortlessly without breaking your flow.
+**Capsule Timer** is a beautifully designed, distraction-free floating countdown timer plugin for Obsidian. Combining elegant minimalist aesthetics with solid, drift-free timing logic, it helps you manage hydration reminders, Pomodoro sessions, or eye-strain breaks effortlessly.
 
-### 🌟 Key Features
+***
 
-#### 1. Minimalist High-Contrast Capsule UI
+### Features
 
-- **Frosted Glass Aesthetic**: The floating window features a translucent glassmorphism design (backdrop-filter: blur). It automatically adapts to your Obsidian theme—displaying a warm "Milky Coffee" capsule in Dark Mode and a sleek "Slate Gray" capsule in Light Mode.
-    
-- **Micro-interactions**: Buttons respond with subtle color changes on hover and elastic scaling effects on click, blending into a highly polished, distraction-free writing setup.
-    
+#### 1. Minimalist Frosted Glass Capsule UI
+Translucent glassmorphism design with automatic theme adaptation — warm "Milky Coffee" in Dark Mode, sleek "Slate Gray" in Light Mode. Micro-interactions on hover and click blend into a polished desktop aesthetic.
 
 #### 2. Smart Sleep-Proof Accuracy
-
-- **Timestamp-Based Verification**: Unlike traditional timers that rely on simple interval countdowns that drift easily, Capsule Timer tracks the absolute "target end time" via system epoch timestamps.
-    
-- **Sleep & Hibernate Resilience**: If your computer goes to sleep or gets hibernated during a countdown, the plugin automatically recalculates the elapsed time upon waking. If the time has expired, it triggers immediately, completely bypassing the freeze issues common in basic web timers.
-    
+Timestamp-based tracking ensures drift-free timing. If your computer sleeps or hibernates, the plugin recalculates elapsed time upon waking and triggers immediately if expired.
 
 #### 3. Position Memory & Viewport Clamping
+Drag the capsule anywhere on screen — coordinates are saved automatically. Robust boundary calculations prevent the capsule from being dragged off-screen and auto-adjust on window resize.
 
-- **Auto Position-Saving**: Drag the capsule anywhere on your screen. The plugin automatically remembers your preferred coordinates and displays future countdown alerts at the exact same spot.
-    
-- **Edge Boundary Clamping**: A robust boundary calculation prevents the capsule from ever being dragged off-screen. If you resize your Obsidian window, the coordinates automatically adjust on the next trigger to ensure the capsule remains visible.
-    
-- **Multi-Window Compatibility**: Built to support Obsidian's multi-window workspace (Popout windows). The capsule accurately attaches to the active viewport you are currently working in, eliminating cross-window positioning glitches.
-    
-
-#### 4. Universal Pointer Interaction Support
-
-- **Mobile & Touch Compatibility**: By replacing outdated mouse listeners with unified modern Pointer Events, the dragging interaction is fully compatible with touch screens (iPad, mobile) and styluses, as well as traditional desktop mice.
-    
+#### 4. Dual Counting Modes
+- **Real Time Mode**: Perfect for hydration reminders or Pomodoro — time keeps ticking even when Obsidian is closed.
+- **App-Only Mode**: Ideal for eye-strain prevention — time pauses when the app is closed or system sleeps.
 
 #### 5. Clean, Leak-Free Engineering
+Fully offline operation. Complete lifecycle teardown with active timer cleanup — no background CPU consumption, no memory leaks.
 
-- **Complete Lifecycle Teardown**: When the window closes or the plugin is unloaded, all DOM nodes are removed and global document listeners are cleanly unsubscribed.
-    
-- **Active Timer Cleanup**: Background intervals are strictly managed and manually cleared when stopping, re-starting, or toggling, preventing silent background CPU consumption.
-    
+***
 
-### ⚙️ Data Storage Mechanism
+## Usage
 
-Your custom duration, notification message, status bar visibility, and saved capsule coordinates are stored locally inside the default Obsidian plugin data.json file. **The plugin operates completely offline** and supports multi-device synchronization out of the box.
+1. Go to **Settings** > **Capsule Timer** to configure duration and alert message.
+2. Click the **Clock** ribbon icon to start the countdown. A live countdown appears in the status bar.
+3. When time runs out, the capsule appears:
+   - Click **Play** to quickly restart a new session.
+   - Click **X** to dismiss the alert.
+4. Drag the capsule text area to reposition. Position saves automatically on release.
 
-### 📥 Installation
+***
+
+### Settings Overview
+
+| Setting | Description |
+|---------|-------------|
+| Duration (minutes) | Countdown duration |
+| Alert Message | Text shown when timer expires |
+| Auto-start on launch | Start countdown automatically when Obsidian opens |
+| Counting Mode | Real time / App-only |
+| Show Status Bar | Display live countdown in the status bar |
+| Dark/Light Mode Background | Customize capsule background color |
+
+***
+
+### Installation
 
 #### Method 1: Community Plugins (Recommended)
 
-Once approved in the official directory, you can install it directly:
-
-1. Open Obsidian **Settings** > **Community plugins** > **Browse**.
-    
-2. Search for **Capsule Timer**.
-    
-3. Click **Install**, then **Enable**.
-    
+Once reviewed and listed on the community marketplace:
+1. Open Obsidian **Settings** > **Community plugins** > **Browse**.
+2. Search for and select `Capsule Timer`.
+3. Click **Install** and then **Enable**.
 
 #### Method 2: Manual Installation
 
-1. Go to the Releases page of this repository and download main.js, manifest.json, and styles.css.
-    
-2. Open your local Obsidian vault directory.
-    
-3. Navigate to .obsidian/plugins/ and create a new directory named capsule-timer.
-    
-4. Copy the downloaded files into that folder.
-    
-5. Go to Obsidian **Settings** > **Community plugins**, reload, and enable the plugin.
-    
+1. Go to the [Releases](https://github.com/hornatx/capsule-timer/releases) page to download the latest `main.js`, `manifest.json` and `styles.css` files.
+2. Open your Obsidian vault folder on your computer.
+3. Navigate to the `.obsidian/plugins/` directory and create a folder named `capsule-timer`.
+4. Place the downloaded files into this folder.
+5. Reload and enable the plugin in Obsidian **Settings** > **Community plugins**.
 
-### 🛠️ How to Use
+***
 
-1. **Configure**: Go to Obsidian **Settings** > **Capsule Timer** to configure your duration (minutes) and custom alert message (e.g., "Time to drink water!").
-    
-2. **Start Countdown**: Click the **Clock** ribbon icon in the left ribbon bar to start the timer. A live countdown will appear in the status bar at the bottom.
-    
-3. **Handle Alert**: When the time runs out, the capsule will appear on your screen:
-    
-    - Click the **Play** button on the left to quickly repeat/start a new timer session.
-        
-    - Click the **X** button on the right to dismiss the alert.
-        
-4. **Reposition**: Drag the capsule by holding/clicking the middle text area to place it anywhere you like. The position saves automatically when you release.
+QQ Group: 1094620986
